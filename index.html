@@ -389,6 +389,40 @@
       }
       #modalLevelInfo{
         z-index: 33;
+        background: #0D3320;
+        border: 1px solid rgba(45, 122, 79, 0.6);
+      }
+      #modalLevelInfo .modal-header{
+        border-bottom-color: rgba(45, 122, 79, 0.45);
+      }
+      #modalLevelInfo .modal-title{
+        color: #F5C842;
+      }
+      #modalLevelInfo .modal-title .tag{
+        background: rgba(245, 200, 66, 0.14);
+        border-color: rgba(245, 200, 66, 0.35);
+        color: #F5C842;
+      }
+      #modalLevelInfo .subtitle{
+        color: rgba(230, 245, 235, 0.92);
+      }
+      #modalLevelInfo .subtitle b{
+        color: rgba(170, 235, 195, 0.95);
+        font-weight: 900;
+      }
+      #modalLevelInfo .divider{
+        background: rgba(45, 122, 79, 0.42);
+      }
+      #modalLevelInfo .icon-btn{
+        background: rgba(45, 122, 79, 0.4);
+        border: 1px solid rgba(45, 122, 79, 0.55);
+        color: rgba(255, 250, 235, 0.96);
+      }
+      #modalLevelInfo .icon-btn:hover{
+        background: rgba(45, 122, 79, 0.55);
+      }
+      #modalLevelInfo .icon-btn:active{
+        filter: brightness(0.95);
       }
       .modal.show{
         opacity:1;
@@ -520,10 +554,10 @@
 
       /* ===== world map modal（丛林冒险 · 完全独立样式） ===== */
       .modal.modal-world.modal-world-jungle{
-        width: 90vw;
-        height: 85vh;
-        max-width: 90vw;
-        max-height: 85vh;
+        width: min(90vw, calc(100% - 24px));
+        max-width: min(90vw, calc(100% - 24px));
+        height: min(80vh, calc(100% - 40px));
+        max-height: min(80vh, calc(100% - 40px));
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -534,24 +568,34 @@
           0 24px 80px rgba(0, 0, 0, 0.45),
           inset 0 1px 0 rgba(255, 255, 255, 0.06);
       }
+      .modal.modal-world.modal-world-jungle.show{
+        transform: translate(-50%, -50%) scale(1);
+      }
       .modal-world-jungle .modal-header{
         border-bottom-color: rgba(245, 200, 66, 0.15);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .modal-world-jungle .modal-body > .subtitle{
         flex-shrink: 0;
       }
       .modal-world-jungle .modal-title{
         color: rgba(255, 250, 235, 0.96);
       }
       .modal-world-jungle .modal-body{
-        flex: 1;
+        flex: 1 1 auto;
         min-height: 0;
-        padding: 10px 14px 16px;
+        padding: 10px 14px 14px;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
       }
       .modal-world-mapwrap{
         position: relative;
-        flex: 1;
-        min-height: 240px;
+        flex: 1 1 auto;
+        min-height: 0;
         border-radius: 18px;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -572,11 +616,15 @@
         background-size: 110px 100%, 110px 100%;
       }
       .modal-world-svg{
-        position: relative;
+        position: absolute;
+        left: 0;
+        top: 0;
         z-index: 2;
         width: 100%;
         height: 100%;
         display: block;
+        max-width: 100%;
+        max-height: 100%;
       }
       .modal-world-svg text{
         font-family: "Noto Sans SC", "Nunito", sans-serif;
@@ -1327,9 +1375,9 @@
             <div class="overlay" id="overlay" aria-hidden="true"></div>
 
             <!-- World map modal（丛林冒险地图 · 独立实现） -->
-            <div class="modal modal-world modal-world-jungle" id="modalWorld" role="dialog" aria-modal="true" aria-label="冒险地图 · Level 岛屿">
+            <div class="modal modal-world modal-world-jungle" id="modalWorld" role="dialog" aria-modal="true" aria-label="世界地图 · Level 岛屿">
               <div class="modal-header">
-                <div class="modal-title">冒险地图 <span class="tag">L1～L6</span></div>
+                <div class="modal-title">世界地图 <span class="tag">L1～L6</span></div>
                 <button class="icon-btn" type="button" data-close-modal aria-label="关闭地图">✕</button>
               </div>
               <div class="modal-body">
