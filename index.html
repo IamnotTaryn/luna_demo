@@ -387,6 +387,9 @@
         z-index: 31;
         overflow:hidden;
       }
+      #modalLevelInfo{
+        z-index: 32;
+      }
       .modal.show{
         opacity:1;
         pointer-events:auto;
@@ -518,20 +521,40 @@
       /* ===== world map modal ===== */
       .modal.modal-world{
         width: min(940px, 94%);
+        overflow: visible;
       }
       .world-map{
+        position: relative;
         margin-top: 10px;
         border-radius: 20px;
         border: 1px solid rgba(255,255,255,.12);
         background: radial-gradient(900px 520px at 20% 10%, rgba(245,200,66,.10), transparent 60%),
                     rgba(255,255,255,.05);
-        overflow:hidden;
+        overflow: visible;
       }
       .world-map svg{
         width: 100%;
         height: auto;
         display:block;
       }
+      .wm-node-layer{
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+      }
+      /* 锚点：底部中心落在 left/bottom，仅用固定百分比与 translateX(-50%) */
+      .wm-node-slot{
+        position: absolute;
+        pointer-events: none;
+        transform: translateX(-50%);
+      }
+      .wm-slot-l1{ left: 28%; bottom: 18%; }
+      .wm-slot-l2{ left: 42%; bottom: 35%; }
+      .wm-slot-l3{ left: 54%; bottom: 50%; }
+      .wm-slot-l4{ left: 66%; bottom: 62%; }
+      .wm-slot-l5{ left: 78%; bottom: 73%; }
+      .wm-slot-l6{ left: 88%; bottom: 83%; }
       .world-node{
         transform-origin: center;
       }
@@ -543,26 +566,42 @@
       /* legacy selector guard: prevent accidental animations */
       .world-node{ animation: none; }
 
-      /* new world map (clickable nodes + fog) */
-      .wm-node{
-        cursor:pointer;
-        transform-origin:center;
-        transition: transform .14s ease, filter .14s ease;
+      /* new world map（HTML 节点：仅 L2 平时有跳动；点击 .clicked 暂停动效） */
+      button.wm-node.wm-node-inner{
+        display: block;
+        cursor: pointer;
+        pointer-events: auto;
+        transform-origin: center;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        max-width: 220px;
+        overflow: visible;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
-      .wm-node:hover{ transform: translateY(-2px) scale(1.03); }
-      .wm-node:active{ transform: translateY(1px) scale(.99); }
-      .wm-node.locked{ cursor:pointer; }
-      .wm-node.locked:hover{ transform:none; }
-      .wm-node.current{
+      .wm-node-inner svg{
+        display: block;
+        overflow: visible;
+      }
+      .wm-node-inner:not(.current){
+        animation: none;
+        transition: none;
+      }
+      .wm-node-inner.current{
         animation: bouncePulse 1.6s ease-in-out infinite;
         filter: drop-shadow(0 0 18px rgba(245,200,66,.38)) drop-shadow(0 12px 22px rgba(0,0,0,.30));
       }
-      #modalWorld.paused .wm-node.current{
-        animation: none;
-      }
-      .wm-node.selected{
+      .wm-node-inner.clicked{
         animation: none !important;
-        filter: drop-shadow(0 0 18px rgba(245,200,66,.30)) drop-shadow(0 12px 22px rgba(0,0,0,.30));
+        transform: none !important;
+      }
+      .wm-node-inner.locked{
+        opacity: .55;
+        filter: grayscale(1);
       }
       .fog{
         opacity:.58;
@@ -1323,81 +1362,97 @@
                       <circle cx="860" cy="70" r="1.7" fill="rgba(255,255,255,.76)"/>
                     </g>
 
-                    <!-- winding route (left-bottom to right-top) -->
-                    <path d="M150 430 C 240 420 260 385 310 360
-                             C 370 330 410 320 470 300
-                             C 530 278 560 260 600 240
-                             C 650 214 690 205 720 180
-                             C 760 150 790 140 820 120"
+                    <!-- winding route（与遮罩图节点锚点一致：900×520 坐标） -->
+                    <path d="M252 426 C 300 418 340 375 378 338
+                             C 420 305 450 285 486 260
+                             C 530 232 560 218 594 198
+                             C 640 175 675 158 702 140
+                             C 735 118 765 102 792 88"
                           fill="none" stroke="rgba(255,255,255,.14)" stroke-width="12" stroke-linecap="round" opacity=".55"/>
-                    <path d="M150 430 C 240 420 260 385 310 360
-                             C 370 330 410 320 470 300
-                             C 530 278 560 260 600 240
-                             C 650 214 690 205 720 180
-                             C 760 150 790 140 820 120"
+                    <path d="M252 426 C 300 418 340 375 378 338
+                             C 420 305 450 285 486 260
+                             C 530 232 560 218 594 198
+                             C 640 175 675 158 702 140
+                             C 735 118 765 102 792 88"
                           fill="none" stroke="rgba(245,200,66,.62)" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10" opacity=".9"/>
 
-                    <!-- subtle fog background for locked area (kept behind nodes) -->
+                    <!-- subtle fog background for locked area -->
                     <g class="fog">
-                      <path d="M360 400 C 520 330 660 270 900 160 L900 0 L350 0 Z" fill="rgba(20, 15, 60, 0.18)"/>
-                      <path d="M360 520 C 560 430 720 330 900 200 L900 520 Z" fill="rgba(20, 15, 60, 0.14)"/>
-                    </g>
-
-                    <!-- nodes (clickable) -->
-                    <g class="wm-node done" data-level="L1" transform="translate(150 430)">
-                      <circle r="30" fill="url(#wmNodeGold)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(26,21,64,.85)">L1</text>
-                      <text x="26" y="-20" font-size="16" fill="rgba(245,200,66,.95)">✓</text>
-                      <text x="0" y="54" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.90)">海洋王国</text>
-                      <text x="0" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.78)">已征服！能听懂简单英文指令</text>
-                    </g>
-                    <g class="wm-node current" data-level="L2" transform="translate(310 360)">
-                      <circle r="32" fill="url(#wmNodeBlue)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(26,21,64,.85)">L2</text>
-                      <text x="0" y="56" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">丛林秘境</text>
-                      <text x="0" y="74" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.78)">冒险进行中！正在建立开口自信</text>
-                    </g>
-                    <g class="wm-node locked" data-level="L3" transform="translate(470 300)">
-                      <circle r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L3</text>
-                      <text x="26" y="-18" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
-                      <g pointer-events="none">
-                        <circle r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
-                      </g>
-                      <text x="0" y="54" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">雪山要塞</text>
-                      <text x="0" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能用完整句子讲述一件事</text>
-                    </g>
-                    <g class="wm-node locked" data-level="L4" transform="translate(600 240)">
-                      <circle r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L4</text>
-                      <text x="26" y="-18" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
-                      <g pointer-events="none">
-                        <circle r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
-                      </g>
-                      <text x="0" y="54" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">火山列岛</text>
-                      <text x="0" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能和外国小朋友自由对话</text>
-                    </g>
-                    <g class="wm-node locked" data-level="L5" transform="translate(720 180)">
-                      <circle r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L5</text>
-                      <text x="26" y="-18" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
-                      <g pointer-events="none">
-                        <circle r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
-                      </g>
-                      <text x="0" y="54" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">星云城堡</text>
-                      <text x="0" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能用英语讲故事、表达观点</text>
-                    </g>
-                    <g class="wm-node locked" data-level="L6" transform="translate(820 120)">
-                      <circle r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
-                      <text y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L6</text>
-                      <text x="26" y="-18" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
-                      <g pointer-events="none">
-                        <circle r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
-                      </g>
-                      <text x="0" y="54" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">银河总部</text>
-                      <text x="0" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">终点站：达到中考口语水平，畅游星际！</text>
+                      <path d="M420 380 C 560 310 700 240 900 140 L900 0 L380 0 Z" fill="rgba(20, 15, 60, 0.18)"/>
+                      <path d="M420 520 C 600 430 760 320 900 200 L900 520 Z" fill="rgba(20, 15, 60, 0.14)"/>
                     </g>
                   </svg>
+                  <div class="wm-node-layer">
+                    <div class="wm-node-slot wm-slot-l1">
+                      <button type="button" class="wm-node wm-node-inner done" data-level="L1" aria-label="L1 海洋王国">
+                        <svg viewBox="-72 -46 144 118" width="144" height="118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="30" fill="url(#wmNodeGold)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(26,21,64,.85)">L1</text>
+                          <text x="26" y="-26" font-size="16" fill="rgba(245,200,66,.95)">✓</text>
+                          <text x="0" y="48" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.90)">海洋王国</text>
+                          <text x="0" y="66" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.78)">已征服！能听懂简单英文指令</text>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="wm-node-slot wm-slot-l2">
+                      <button type="button" class="wm-node wm-node-inner current" data-level="L2" aria-label="L2 丛林秘境">
+                        <svg viewBox="-76 -46 152 122" width="152" height="122" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="32" fill="url(#wmNodeBlue)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(26,21,64,.85)">L2</text>
+                          <text x="0" y="50" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">丛林秘境</text>
+                          <text x="0" y="68" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.78)">冒险进行中！正在建立开口自信</text>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="wm-node-slot wm-slot-l3">
+                      <button type="button" class="wm-node wm-node-inner locked" data-level="L3" aria-label="L3 雪山要塞（未解锁）">
+                        <svg viewBox="-72 -46 144 118" width="144" height="118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L3</text>
+                          <text x="26" y="-24" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
+                          <circle cx="0" cy="-6" r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
+                          <text x="0" y="48" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">雪山要塞</text>
+                          <text x="0" y="66" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能用完整句子讲述一件事</text>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="wm-node-slot wm-slot-l4">
+                      <button type="button" class="wm-node wm-node-inner locked" data-level="L4" aria-label="L4 火山列岛（未解锁）">
+                        <svg viewBox="-72 -46 144 118" width="144" height="118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L4</text>
+                          <text x="26" y="-24" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
+                          <circle cx="0" cy="-6" r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
+                          <text x="0" y="48" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">火山列岛</text>
+                          <text x="0" y="66" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能和外国小朋友自由对话</text>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="wm-node-slot wm-slot-l5">
+                      <button type="button" class="wm-node wm-node-inner locked" data-level="L5" aria-label="L5 星云城堡（未解锁）">
+                        <svg viewBox="-72 -46 144 118" width="144" height="118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L5</text>
+                          <text x="26" y="-24" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
+                          <circle cx="0" cy="-6" r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
+                          <text x="0" y="48" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">星云城堡</text>
+                          <text x="0" y="66" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">解锁后：能用英语讲故事、表达观点</text>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="wm-node-slot wm-slot-l6">
+                      <button type="button" class="wm-node wm-node-inner locked" data-level="L6" aria-label="L6 银河总部（未解锁）">
+                        <svg viewBox="-78 -46 156 118" width="156" height="118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <circle cx="0" cy="-6" r="30" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+                          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.82)">L6</text>
+                          <text x="26" y="-24" font-size="16" fill="rgba(255,255,255,.70)">🔒</text>
+                          <circle cx="0" cy="-6" r="46" fill="rgba(20, 15, 60, 0.6)" filter="url(#fogBlur)"/>
+                          <text x="0" y="48" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.86)">银河总部</text>
+                          <text x="0" y="66" text-anchor="middle" font-size="12" font-weight="800" fill="rgba(255,255,255,.72)">终点站：达到中考口语水平，畅游星际！</text>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1517,7 +1572,6 @@
         const homeNodeLighthouse = $("#nodeLighthouse");
 
         const allModals = [modalWorld, modalUnit, modalUnitIntro, modalLevel2, modalAdvisor, modalLevelInfo].filter(Boolean);
-        let activeWorldNode = null;
 
         const levelInfos = {
           L1: {
@@ -1720,9 +1774,7 @@
           overlay.classList.remove("show");
           overlay.setAttribute("aria-hidden", "true");
           allModals.forEach((m) => m.classList.remove("show"));
-          modalWorld.classList.remove("paused");
-          if (activeWorldNode) activeWorldNode.classList.remove("selected");
-          activeWorldNode = null;
+          $$(".wm-node-inner.clicked", modalWorld).forEach((el) => el.classList.remove("clicked"));
         }
 
         function renderLessons({ mode }) {
@@ -2135,14 +2187,12 @@
         });
 
         // World map node click -> show level info card
-        const worldNodes = $$(".wm-node", modalWorld);
+        const worldNodes = $$(".wm-node-inner", modalWorld);
         const showLevelInfo = (level, nodeEl) => {
           const info = levelInfos[level];
           if (!info) return;
-          modalWorld.classList.add("paused");
-          if (activeWorldNode) activeWorldNode.classList.remove("selected");
-          activeWorldNode = nodeEl || null;
-          if (activeWorldNode) activeWorldNode.classList.add("selected");
+          $$(".wm-node-inner.clicked", modalWorld).forEach((el) => el.classList.remove("clicked"));
+          if (nodeEl) nodeEl.classList.add("clicked");
 
           const isLocked = !!(nodeEl && nodeEl.classList.contains("locked"));
           levelInfoTitle.textContent = isLocked ? `${info.title} 🔒` : info.title;
@@ -2156,9 +2206,10 @@
           openLevelInfoModal();
         };
         worldNodes.forEach((n) => {
-          n.setAttribute("role", "button");
-          n.setAttribute("tabindex", "0");
-          n.addEventListener("click", () => showLevelInfo(n.getAttribute("data-level"), n));
+          n.addEventListener("click", (e) => {
+            e.stopPropagation();
+            showLevelInfo(n.getAttribute("data-level"), n);
+          });
           n.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
