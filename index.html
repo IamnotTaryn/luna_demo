@@ -2173,9 +2173,18 @@
 
         overlay.addEventListener("click", closeModal);
         $$("[data-close-modal]").forEach((b) => b.addEventListener("click", closeModal));
+
+        /* 级别简介卡片：阻止点击冒泡到 document / 其它层，避免误触大地图关闭逻辑 */
+        if (modalLevelInfo) {
+          modalLevelInfo.addEventListener("click", (e) => {
+            e.stopPropagation();
+          });
+        }
         if (btnCloseLevelInfo) {
           btnCloseLevelInfo.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             closeLevelInfoOnly();
           });
         }
